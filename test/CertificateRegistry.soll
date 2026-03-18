@@ -29,4 +29,6 @@ contract CertificateRegistryTest {
         registry.storeHash(hash);
         require(registry.verifyHash(hash), "Hash should exist after storing");
     }
+
+    
 }
