@@ -6,7 +6,7 @@ import './App.css'
 function App() {
   const [selectedFile, setSelectedFile] = useState(null);
   const contractAddress = "0x51e0fc8417e89B208995422A173a45B0c2A28DD0"
-
+ 
   async function hashFile(file) {
     const arrayBuffer = await file.arrayBuffer();
     const hashBuffer = await window.crypto.subtle.digest("SHA-256", arrayBuffer)
@@ -16,6 +16,8 @@ function App() {
   }
 
   async function onFileChange(e) {
+    if (!e.target.files?.[0]) return;
+
     if (e.target.files[0].size > 5000000) {
       alert("File size exceeds 5MB");
       return;
@@ -30,11 +32,21 @@ function App() {
       alert("Please select a file first.");
       return;
     }
-    console.log("Uploading:", selectedFile);
+    if (!window.ethereum) {
+      alert("MetaMask is not detected.");
+      return;
+    }
 
-    const provider = new ethers.providers.Web3Provider(window.ethereum)
-    const signer = provider.getSigner()
-    const contract = new ethers.Contract(contractAddress, certificateArtifact.abi, signer)
+    console.log("Uploading:", selectedFile);
+    await window.ethereum.request({ method: "eth_requestAccounts" });
+
+    const provider = new ethers.BrowserProvider(window.ethereum);
+    const signer = await provider.getSigner();
+    const contract = new ethers.Contract(contractAddress, certificateArtifact.abi, signer);
+
+    const hash = `0x${await hashFile(selectedFile)}`;
+    const storeHash = await contract.storeHash(hash)
+    console.log("The hash: ", storeHash);
   }
 
   return (
