@@ -4,6 +4,8 @@
 
 Follow these steps to set up dependencies for both the contract and frontend portions of the project:
 
+Before you start, ensure you have **Node.js 22+** and a package manager like **npm** or **pnpm** installed.
+
 ### 1. Contract Dependencies
 
 1. Ensure you are in the root project directory.
@@ -28,28 +30,14 @@ Proceed with the rest of the setup or development as required.
 
 ---
 
-## Setting up a Hardhat Project
-
-Before you start, ensure you have **Node.js 22+** and a package manager like **npm** or **pnpm** installed.
-
-### Creating your Project
-
-1. In an empty directory, initialize Hardhat:
-    ```sh
-    npx hardhat --init
-    ```
-    - **Version:** `Hardhat 3 Beta`
-    - **Directory:** current (`.`)
-    - **Project type:** _A minimal Hardhat project_ **(select this, not the default)**
-    - **Install dependencies:** Yes (recommended)
 
 ### Deploying to Sepolia Testnet
 
 1. **Get Sepolia RPC credentials:**
     - [Alchemy](https://www.alchemy.com/) or similar services can provide a Sepolia RPC URL and you can use their faucet to get Sepolia ETH.
 
-2. **Update your Hardhat config (`hardhat.config.ts`):**
-    ```typescript
+2. **Update your Hardhat config (`hardhat.config.js`):**
+    ```Javascript
     import hardhatToolboxViemPlugin from "@nomicfoundation/hardhat-toolbox-viem";
     import { defineConfig } from "hardhat/config";
 
