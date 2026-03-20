@@ -80,5 +80,3 @@ Before you start, ensure you have **Node.js 22+** and a package manager like **n
 
 ---
 
-> **Next Steps:**  
-> To keep private keys and RPC URLs secure, move secrets to environment variables. See [Hardhat docs](https://hardhat.org/) for details.
