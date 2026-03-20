@@ -40,8 +40,8 @@ Before you start, ensure you have **Node.js 22+** and a package manager like **n
     ```
     - **Version:** `Hardhat 3 Beta`
     - **Directory:** current (`.`)
-    - **Project type:** ✔️ _A minimal Hardhat project_ **(select this, not the default)**
-    - **Install dependencies:** ✔️ Yes (recommended)
+    - **Project type:** _A minimal Hardhat project_ **(select this, not the default)**
+    - **Install dependencies:** Yes (recommended)
 
 ### Deploying to Sepolia Testnet
 
