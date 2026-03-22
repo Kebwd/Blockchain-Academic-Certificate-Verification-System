@@ -9,6 +9,32 @@ import type { NonPayableOverrides } from "../common.js"
 
   const _abi = [
   {
+    "inputs": [],
+    "stateMutability": "nonpayable",
+    "type": "constructor"
+  },
+  {
+    "inputs": [],
+    "name": "AccessControlBadConfirmation",
+    "type": "error"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "account",
+        "type": "address"
+      },
+      {
+        "internalType": "bytes32",
+        "name": "neededRole",
+        "type": "bytes32"
+      }
+    ],
+    "name": "AccessControlUnauthorizedAccount",
+    "type": "error"
+  },
+  {
     "anonymous": false,
     "inputs": [
       {
@@ -28,6 +54,126 @@ import type { NonPayableOverrides } from "../common.js"
     "type": "event"
   },
   {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "bytes32",
+        "name": "role",
+        "type": "bytes32"
+      },
+      {
+        "indexed": true,
+        "internalType": "bytes32",
+        "name": "previousAdminRole",
+        "type": "bytes32"
+      },
+      {
+        "indexed": true,
+        "internalType": "bytes32",
+        "name": "newAdminRole",
+        "type": "bytes32"
+      }
+    ],
+    "name": "RoleAdminChanged",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "bytes32",
+        "name": "role",
+        "type": "bytes32"
+      },
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "account",
+        "type": "address"
+      },
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "sender",
+        "type": "address"
+      }
+    ],
+    "name": "RoleGranted",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "bytes32",
+        "name": "role",
+        "type": "bytes32"
+      },
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "account",
+        "type": "address"
+      },
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "sender",
+        "type": "address"
+      }
+    ],
+    "name": "RoleRevoked",
+    "type": "event"
+  },
+  {
+    "inputs": [],
+    "name": "DEFAULT_ADMIN_ROLE",
+    "outputs": [
+      {
+        "internalType": "bytes32",
+        "name": "",
+        "type": "bytes32"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "ISSUER_ROLE",
+    "outputs": [
+      {
+        "internalType": "bytes32",
+        "name": "",
+        "type": "bytes32"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "name": "certificateHashes",
+    "outputs": [
+      {
+        "internalType": "bytes32",
+        "name": "",
+        "type": "bytes32"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
     "inputs": [
       {
         "internalType": "bytes32",
@@ -35,7 +181,96 @@ import type { NonPayableOverrides } from "../common.js"
         "type": "bytes32"
       }
     ],
-    "name": "certificateHashes",
+    "name": "certificates",
+    "outputs": [
+      {
+        "internalType": "bytes32",
+        "name": "hash",
+        "type": "bytes32"
+      },
+      {
+        "internalType": "uint256",
+        "name": "timestamp",
+        "type": "uint256"
+      },
+      {
+        "internalType": "string",
+        "name": "studentName",
+        "type": "string"
+      },
+      {
+        "internalType": "string",
+        "name": "degree",
+        "type": "string"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "getCertificateHashesLength",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "bytes32",
+        "name": "role",
+        "type": "bytes32"
+      }
+    ],
+    "name": "getRoleAdmin",
+    "outputs": [
+      {
+        "internalType": "bytes32",
+        "name": "",
+        "type": "bytes32"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "bytes32",
+        "name": "role",
+        "type": "bytes32"
+      },
+      {
+        "internalType": "address",
+        "name": "account",
+        "type": "address"
+      }
+    ],
+    "name": "grantRole",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "bytes32",
+        "name": "role",
+        "type": "bytes32"
+      },
+      {
+        "internalType": "address",
+        "name": "account",
+        "type": "address"
+      }
+    ],
+    "name": "hasRole",
     "outputs": [
       {
         "internalType": "bool",
@@ -50,11 +285,16 @@ import type { NonPayableOverrides } from "../common.js"
     "inputs": [
       {
         "internalType": "bytes32",
-        "name": "hash",
+        "name": "role",
         "type": "bytes32"
+      },
+      {
+        "internalType": "address",
+        "name": "callerConfirmation",
+        "type": "address"
       }
     ],
-    "name": "storeHash",
+    "name": "renounceRole",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"
@@ -63,7 +303,67 @@ import type { NonPayableOverrides } from "../common.js"
     "inputs": [
       {
         "internalType": "bytes32",
-        "name": "hash",
+        "name": "role",
+        "type": "bytes32"
+      },
+      {
+        "internalType": "address",
+        "name": "account",
+        "type": "address"
+      }
+    ],
+    "name": "revokeRole",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "bytes32",
+        "name": "_hash",
+        "type": "bytes32"
+      },
+      {
+        "internalType": "string",
+        "name": "name",
+        "type": "string"
+      },
+      {
+        "internalType": "string",
+        "name": "_degree",
+        "type": "string"
+      }
+    ],
+    "name": "storeCertificate",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "bytes4",
+        "name": "interfaceId",
+        "type": "bytes4"
+      }
+    ],
+    "name": "supportsInterface",
+    "outputs": [
+      {
+        "internalType": "bool",
+        "name": "",
+        "type": "bool"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "bytes32",
+        "name": "_hash",
         "type": "bytes32"
       }
     ],
@@ -80,7 +380,7 @@ import type { NonPayableOverrides } from "../common.js"
   }
 ] as const;
 
-  const _bytecode = "0x6080604052348015600e575f5ffd5b5061030f8061001c5f395ff3fe608060405234801561000f575f5ffd5b506004361061003f575f3560e01c80637fe8888514610043578063bedda47e1461005f578063ef020f4a1461008f575b5f5ffd5b61005d60048036038101906100589190610203565b6100bf565b005b61007960048036038101906100749190610203565b61018b565b6040516100869190610248565b60405180910390f35b6100a960048036038101906100a49190610203565b6101a7565b6040516100b69190610248565b60405180910390f35b5f5f8281526020019081526020015f205f9054906101000a900460ff161561011c576040517f08c379a0000000000000000000000000000000000000000000000000000000008152600401610113906102bb565b60405180910390fd5b60015f5f8381526020019081526020015f205f6101000a81548160ff0219169083151502179055503373ffffffffffffffffffffffffffffffffffffffff16817f68c57ee07187efc88a54ed1e3d4105b6e7d0f49dcb887c87bb1caca9bf2c0ce560405160405180910390a350565b5f602052805f5260405f205f915054906101000a900460ff1681565b5f5f5f8381526020019081526020015f205f9054906101000a900460ff169050919050565b5f5ffd5b5f819050919050565b6101e2816101d0565b81146101ec575f5ffd5b50565b5f813590506101fd816101d9565b92915050565b5f60208284031215610218576102176101cc565b5b5f610225848285016101ef565b91505092915050565b5f8115159050919050565b6102428161022e565b82525050565b5f60208201905061025b5f830184610239565b92915050565b5f82825260208201905092915050565b7f436572746966696361746520616c72656164792073746f7265640000000000005f82015250565b5f6102a5601a83610261565b91506102b082610271565b602082019050919050565b5f6020820190508181035f8301526102d281610299565b905091905056fea264697066735822122049482777918c3df5100b5bb609936918632bf3d5bee40691d0b51ab0cffb650564736f6c634300081c0033";
+  const _bytecode = "0x608060405234801561000f575f5ffd5b5061001a5f3361004b565b506100457f114e74f6ea3bd819998f78687bfcb11b140da08e9b7d222fa9c1f1ba1f2aa1223361004b565b506100f4565b5f828152602081815260408083206001600160a01b038516845290915281205460ff166100eb575f838152602081815260408083206001600160a01b03861684529091529020805460ff191660011790556100a33390565b6001600160a01b0316826001600160a01b0316847f2f8788117e7eff1d82e926ec794901d17c78024a50270940304540a733656f0d60405160405180910390a45060016100ee565b505f5b92915050565b610a4c806101015f395ff3fe608060405234801561000f575f5ffd5b50600436106100cb575f3560e01c80638061e1b311610088578063a1735e7111610063578063a1735e71146101c7578063a217fddf146101da578063d547741f146101e1578063ef020f4a146101f4575f5ffd5b80638061e1b31461018557806382aefa241461018d57806391d14854146101b4575f5ffd5b806301ffc9a7146100cf578063248a9ca3146100f75780632f2ff15d1461012757806336568abe1461013c578063454a35701461014f578063742f068814610162575b5f5ffd5b6100e26100dd3660046106e5565b610215565b60405190151581526020015b60405180910390f35b610119610105366004610713565b5f9081526020819052604090206001015490565b6040519081526020016100ee565b61013a61013536600461072a565b61024b565b005b61013a61014a36600461072a565b610275565b61013a61015d366004610802565b6102ad565b610175610170366004610713565b610402565b6040516100ee949392919061089d565b600154610119565b6101197f114e74f6ea3bd819998f78687bfcb11b140da08e9b7d222fa9c1f1ba1f2aa12281565b6100e26101c236600461072a565b610538565b6101196101d5366004610713565b610560565b6101195f81565b61013a6101ef36600461072a565b61057f565b6100e2610202366004610713565b5f90815260026020526040902054151590565b5f6001600160e01b03198216637965db0b60e01b148061024557506301ffc9a760e01b6001600160e01b03198316145b92915050565b5f82815260208190526040902060010154610265816105a3565b61026f83836105b0565b50505050565b6001600160a01b038116331461029e5760405163334bd91960e11b815260040160405180910390fd5b6102a8828261063f565b505050565b7f114e74f6ea3bd819998f78687bfcb11b140da08e9b7d222fa9c1f1ba1f2aa1226102d7816105a3565b5f84815260026020526040902054156103375760405162461bcd60e51b815260206004820152601a60248201527f436572746966696361746520616c72656164792073746f72656400000000000060448201526064015b60405180910390fd5b60408051608081018252858152426020808301918252828401878152606084018790525f89815260029283905294909420835181559151600183015592519192839290820190610387908261095b565b506060820151600382019061039c908261095b565b50506001805480820182555f9182527fb10e2d527612073b26eecdfd717e6a320cf44b4afac2b0732d9fcbe2b7fa0cf60187905560405133925087917f68c57ee07187efc88a54ed1e3d4105b6e7d0f49dcb887c87bb1caca9bf2c0ce591a35050505050565b600260208190525f91825260409091208054600182015492820180549193929161042b906108d8565b80601f0160208091040260200160405190810160405280929190818152602001828054610457906108d8565b80156104a25780601f10610479576101008083540402835291602001916104a2565b820191905f5260205f20905b81548152906001019060200180831161048557829003601f168201915b5050505050908060030180546104b7906108d8565b80601f01602080910402602001604051908101604052809291908181526020018280546104e3906108d8565b801561052e5780601f106105055761010080835404028352916020019161052e565b820191905f5260205f20905b81548152906001019060200180831161051157829003601f168201915b5050505050905084565b5f918252602082815260408084206001600160a01b0393909316845291905290205460ff1690565b6001818154811061056f575f80fd5b5f91825260209091200154905081565b5f82815260208190526040902060010154610599816105a3565b61026f838361063f565b6105ad81336106a8565b50565b5f6105bb8383610538565b610638575f838152602081815260408083206001600160a01b03861684529091529020805460ff191660011790556105f03390565b6001600160a01b0316826001600160a01b0316847f2f8788117e7eff1d82e926ec794901d17c78024a50270940304540a733656f0d60405160405180910390a4506001610245565b505f610245565b5f61064a8383610538565b15610638575f838152602081815260408083206001600160a01b0386168085529252808320805460ff1916905551339286917ff6391f5c32d9c69d2a47ea670b442974b53935d1edc7fd64eb21e047a839171b9190a4506001610245565b6106b28282610538565b6106e15760405163e2517d3f60e01b81526001600160a01b03821660048201526024810183905260440161032e565b5050565b5f602082840312156106f5575f5ffd5b81356001600160e01b03198116811461070c575f5ffd5b9392505050565b5f60208284031215610723575f5ffd5b5035919050565b5f5f6040838503121561073b575f5ffd5b8235915060208301356001600160a01b0381168114610758575f5ffd5b809150509250929050565b634e487b7160e01b5f52604160045260245ffd5b5f82601f830112610786575f5ffd5b813567ffffffffffffffff8111156107a0576107a0610763565b604051601f8201601f19908116603f0116810167ffffffffffffffff811182821017156107cf576107cf610763565b6040528181528382016020018510156107e6575f5ffd5b816020850160208301375f918101602001919091529392505050565b5f5f5f60608486031215610814575f5ffd5b83359250602084013567ffffffffffffffff811115610831575f5ffd5b61083d86828701610777565b925050604084013567ffffffffffffffff811115610859575f5ffd5b61086586828701610777565b9150509250925092565b5f81518084528060208401602086015e5f602082860101526020601f19601f83011685010191505092915050565b848152836020820152608060408201525f6108bb608083018561086f565b82810360608401526108cd818561086f565b979650505050505050565b600181811c908216806108ec57607f821691505b60208210810361090a57634e487b7160e01b5f52602260045260245ffd5b50919050565b601f8211156102a857805f5260205f20601f840160051c810160208510156109355750805b601f840160051c820191505b81811015610954575f8155600101610941565b5050505050565b815167ffffffffffffffff81111561097557610975610763565b6109898161098384546108d8565b84610910565b6020601f8211600181146109bb575f83156109a45750848201515b5f19600385901b1c1916600184901b178455610954565b5f84815260208120601f198516915b828110156109ea57878501518255602094850194600190920191016109ca565b5084821015610a0757868401515f19600387901b60f8161c191681555b50505050600190811b0190555056fea26469706673582212209ae235326cfedb9fc7cb67e9303c29d4e2f1ab095855abb4803ea0dc00a2929964736f6c634300081c0033";
 
   
       type CertificateRegistryConstructorParams = [signer?: Signer] | ConstructorParameters<typeof ContractFactory>;
