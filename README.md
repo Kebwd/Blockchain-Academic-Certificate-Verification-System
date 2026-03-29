@@ -71,4 +71,47 @@ npm hardhat test
     - You can then view it on [Sepolia Etherscan](https://sepolia.etherscan.io/).
 
 ---
+# How To Test
 
+## MetaMask Accounts
+There are total of 20 accounts in Account.txt, only Account#0 is Issuer role, others are all Employer.
+You will need to import atleast two account to your MetaMask wallet inorder to test it.
+
+### 1.Import Account
+1. Copy the private key in Account.txt, Account#0 is a must. Feel free to try Account#1-19.
+2. Go to your MetaMask wallet, Add waller -> paste the private key
+
+### 2.Run and deploy
+Run the ***Start_project.bat***, it will automaticlly deploy contact and host website, the website should open with your browser.
+
+### 3.Connect accounts
+Inside the website there is a "Connect MetaMask Wallet" button, if you are testing with a new account you will need to use it to connect with your imported accounts.
+
+### 4.Test with different roles
+**Issuer:**
+1. Open your MetaMask extension and switch to Account #0 (import its private key from the Hardhat terminal if you haven't).
+Look at the React website. Because you are connected as the issuer, you should see the Name and Degree input fields.
+2. Create a dummy text file on your computer (you can use diploma.txt or create one).
+3. **On the website:**
+ - Select diploma.txt using the file input.
+ - Enter a Name (e.g., "John Doe").
+ - Enter a Degree (e.g., "B.S. Computer Science").
+ - Click Upload!.
+5. MetaMask will pop up asking you to confirm the transaction. Click Confirm.
+   
+**Expected Result:** The UI status should change to "Waiting for confirmation..." then update to "Hash stored and verified."
+Click the View Details button.
+Expected Result: A box should appear displaying "John Doe", "B.S. Computer Science", and the current timestamp.
+
+**Employer:**
+1. Open MetaMask and switch to a different account (e.g., create a fresh Account #2 in MetaMask).
+Refresh the website just to be safe.
+2. **Expected Result:** The UI should automatically adapt. You should no longer see the Name/Degree inputs, and instead see a simplified view that says "Only authorized issuers can upload certificates."
+3. Select the exact same diploma.txt file you used for Issuer.
+4. Click *Verify*. (Notice this does not trigger a MetaMask gas fee because reading data is free).
+
+ **Expected Result:** The screen should say "Verification: Valid (stored)".
+
+5. Click *View Details*.
+ 
+ **Expected Result:** The employer should be able to see "John Doe" and "B.S. Computer Science".
