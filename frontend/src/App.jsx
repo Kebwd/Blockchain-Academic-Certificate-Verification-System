@@ -1,410 +1,271 @@
-import { useState, useEffect } from 'react'
-import { ethers } from "ethers";
-import certificateArtifact from '../../artifacts/contracts/CertificateRegistry.sol/CertificateRegistry.json';
-import './App.css'
+import { useState, useEffect } from 'react';
+import { ethers } from 'ethers';
 
-function Spinner() {
+const CONTRACT_ABI = [
+  "function storeCertificate(bytes32 _hash, string memory name, string memory _degree) public",
+  "function verifyHash(bytes32 _hash) public view returns (bool)",
+  "function certificates(bytes32) public view returns (bytes32 hash, uint256 timestamp, string studentName, string degree)",
+  "function ISSUER_ROLE() public view returns (bytes32)",
+  "function hasRole(bytes32 role, address account) public view returns (bool)"
+];
+
+const CONTRACT_ADDRESS = "0x5FbDB2315678afecb367f032d93F642f642f642f642f";
+
+export default function App() {
+  const [account, setAccount] = useState("");
+  const [isIssuer, setIsIssuer] = useState(false);
+  const [selectedFile, setSelectedFile] = useState(null);
+  const [fileHash, setFileHash] = useState("");
+  const [form, setForm] = useState({ name: "", degree: "" });
+  const [status, setStatus] = useState({ type: "", message: "" });
+  const [certDetails, setCertDetails] = useState(null);
+
+  useEffect(() => {
+    checkWalletConnection();
+  }, []);
+
+  const checkWalletConnection = async () => {
+    if (window.ethereum) {
+      try {
+        const accounts = await window.ethereum.request({ method: 'eth_accounts' });
+        if (accounts.length > 0) {
+          setAccount(accounts[0]);
+          checkIssuerRole(accounts[0]);
+        }
+      } catch (error) {
+        console.error("Wallet connection check failed", error);
+      }
+    }
+  };
+
+  const connectWallet = async () => {
+    if (window.ethereum) {
+      try {
+        const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
+        setAccount(accounts[0]);
+        checkIssuerRole(accounts[0]);
+      } catch (error) {
+        setStatus({ type: 'error', message: 'Failed to connect wallet' });
+      }
+    } else {
+      setStatus({ type: 'error', message: 'Please install MetaMask!' });
+    }
+  };
+
+  const checkIssuerRole = async (addr) => {
+    try {
+      const provider = new ethers.BrowserProvider(window.ethereum);
+      const contract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, provider);
+      const role = await contract.ISSUER_ROLE();
+      const is_issuer = await contract.hasRole(role, addr);
+      setIsIssuer(is_issuer);
+    } catch (error) {
+      console.error("Role check failed", error);
+    }
+  };
+
+  const handleFileChange = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    setSelectedFile(file);
+    setStatus({ type: 'loading', message: 'Computing file hash...' });
+    
+    try {
+      const buffer = await file.arrayBuffer();
+      const hash = ethers.keccak256(new Uint8Array(buffer));
+      setFileHash(hash);
+      setStatus({ type: 'success', message: 'File hash computed successfully!' });
+    } catch (error) {
+      setStatus({ type: 'error', message: 'File processing failed' });
+    }
+  };
+
+  const handleUpload = async () => {
+    if (!fileHash || !form.name || !form.degree) {
+      setStatus({ type: 'error', message: 'Please fill in all information and upload the file' });
+      return;
+    }
+    
+    try {
+      setStatus({ type: 'loading', message: 'Submitting transaction...' });
+      const provider = new ethers.BrowserProvider(window.ethereum);
+      const signer = await provider.getSigner();
+      const contract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, signer);
+      
+      const tx = await contract.storeCertificate(fileHash, form.name, form.degree);
+      setStatus({ type: 'loading', message: 'Transaction sent, waiting for confirmation...' });
+      await tx.wait();
+      setStatus({ type: 'success', message: 'Certificate stored successfully on blockchain!' });
+    } catch (error) {
+      setStatus({ type: 'error', message: 'Upload failed:' + (error.reason || error.message) });
+    }
+  };
+
+  const handleVerify = async () => {
+    if (!fileHash) {
+      setStatus({ type: 'error', message: 'Please select a file' });
+      return;
+    }
+    
+    try {
+      setStatus({ type: 'loading', message: 'Verifying...' });
+      const provider = new ethers.BrowserProvider(window.ethereum);
+      const contract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, provider);
+      
+      const isValid = await contract.verifyHash(fileHash);
+      if (isValid) {
+        const details = await contract.certificates(fileHash);
+        setCertDetails({
+          hash: details.hash,
+          studentName: details.studentName,
+          degree: details.degree,
+          timestamp: new Date(Number(details.timestamp) * 1000).toLocaleString()
+        });
+        setStatus({ type: 'success', message: 'Certificate verified successfully!' });
+      } else {
+        setCertDetails(null);
+        setStatus({ type: 'error', message: 'No matching certificate record found' });
+      }
+    } catch (error) {
+      setStatus({ type: 'error', message: 'Verification failed' });
+    }
+  };
+
   return (
-    <div className="spinner" style={{margin: '16px 0'}}>
-      <div style={{
-        width: 32,
-        height: 32,
-        border: '4px solid #ccc',
-        borderTop: '4px solid #333',
-        borderRadius: '50%',
-        animation: 'spin 1s linear infinite',
-        margin: 'auto'
-      }} />
-      <style>{`@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }`}</style>
+    <div style={styles.container}>
+      <header style={styles.header}>
+        <h1 style={styles.title}>Academic Certificate Verification</h1>
+        <p style={styles.subtitle}>Decentralized Authentication Powered by Blockchain</p>
+      </header>
+
+      <div style={styles.walletSection}>
+        {account ? (
+          <p style={styles.accountText}>
+            <span style={styles.dotConnected}></span> Connected: {account.slice(0, 6)}...{account.slice(-4)}
+          </p>
+        ) : (
+          <button style={styles.connectBtn} onClick={connectWallet}>Connect MetaMask Wallet</button>
+        )}
+      </div>
+
+      <div style={styles.mainGrid}>
+        <div style={styles.leftCol}>
+          <div style={styles.card}>
+            <h3 style={styles.cardTitle}>File Operations</h3>
+            <div style={styles.fileDropArea}>
+              <input type="file" onChange={handleFileChange} style={styles.fileInput} id="file-upload"/>
+              <label htmlFor="file-upload" style={styles.fileLabel}>
+                {selectedFile ? `Selected: ${selectedFile.name}` : "Drag & drop or click to upload certificate"}
+              </label>
+            </div>
+
+            {fileHash && (
+              <p style={styles.hashText}>
+                <strong>File Hash:</strong> {fileHash.slice(0, 20)}...
+              </p>
+            )}
+
+            {isIssuer && (
+              <div style={styles.formGroup}>
+                <h4 style={styles.sectionTitle}>Issue Certificate Details (Issuer Only)</h4>
+                <input
+                  type="text"
+                  placeholder="Student Name"
+                  value={form.name}
+                  onChange={(e) => setForm({ ...form, name: e.target.value })}
+                  style={styles.input}
+                />
+                <input
+                  type="text"
+                  placeholder="Degree Earned (e.g., B.Sc. in Computer Science)"
+                  value={form.degree}
+                  onChange={(e) => setForm({ ...form, degree: e.target.value })}
+                  style={styles.input}
+                />
+                <button style={styles.actionBtnPrimary} onClick={handleUpload}>
+                  Store to Blockchain
+                </button>
+              </div>
+            )}
+
+            <div style={{ marginTop: '15px' }}>
+              <button style={styles.actionBtnSecondary} onClick={handleVerify}>
+                Verify Validity
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div style={styles.rightCol}>
+          <div style={styles.card}>
+            <h3 style={styles.cardTitle}>Verification Result</h3>
+            
+            {status.message && (
+              <div style={{
+                ...styles.statusBox,
+                backgroundColor: status.type === 'error' ? '#fee2e2' : status.type === 'success' ? '#dcfce7' : '#e0f2fe',
+                color: status.type === 'error' ? '#991b1b' : status.type === 'success' ? '#166534' : '#0369a1'
+              }}>
+                {status.message}
+              </div>
+            )}
+
+            {certDetails ? (
+              <div style={styles.detailsBox}>
+                <h4 style={styles.detailsTitle}>Certificate Record ✅</h4>
+                <div style={styles.detailsRow}>
+                  <span style={styles.detailsLabel}>Student Name:</span>
+                  <span style={styles.detailsValue}>{certDetails.studentName}</span>
+                </div>
+                <div style={styles.detailsRow}>
+                  <span style={styles.detailsLabel}>Degree:</span>
+                  <span style={styles.detailsValue}>{certDetails.degree}</span>
+                </div>
+                <div style={styles.detailsRow}>
+                  <span style={styles.detailsLabel}>Issued at:</span>
+                  <span style={styles.detailsValue}>{certDetails.timestamp}</span>
+                </div>
+                <div style={styles.detailsRow}>
+                  <span style={styles.detailsLabel}>On-chain Hash:</span>
+                  <span style={{ ...styles.detailsValue, fontSize: '11px', wordBreak: 'break-all' }}>{certDetails.hash}</span>
+                </div>
+              </div>
+            ) : (
+              <p style={styles.emptyText}>On-chain details will appear here after verification</p>
+            )}
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
 
-function App() {
-  const [selectedFile, setSelectedFile] = useState(null);
-  const [fileHash, setFileHash] = useState(null);
-  const [verifyResult, setVerifyResult] = useState(null)
-  const [txStatus, setTxStatus] = useState("")
-  const [certificateDetails, setCertificateDetails] = useState(null)
-  const [userMessage, setUserMessage] = useState("");
-  const [allCertificates, seAllCertificates] = useState(null);
-  const [isIssuer, setIsIssuer] = useState(false);
-  const [account, setAccount] = useState("");
-
-  const contractAddress = "0x5FbDB2315678afecb367f032d93F642f64180aa3"
-
-  const [form, setForm] = useState({
-    name: "",
-    degree: ""
-  })
-  
-  async function hashFile(file) {
-    const arrayBuffer = await file.arrayBuffer();
-    const hashBuffer = await window.crypto.subtle.digest("SHA-256", arrayBuffer)
-    const hashArray = Array.from(new Uint8Array(hashBuffer)); // Convert buffer to byte array
-    const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
-    return hashHex;
-  }
-
-  async function onFileChange(e) {
-    if (!e.target.files?.[0]) return;
-
-    if (e.target.files[0].size > 5000000) {
-      setUserMessage("File size exceeds 5MB")
-      return;
-    }
-    setVerifyResult(null);
-    setTxStatus("");
-    setSelectedFile(e.target.files[0])
-    const hash= await hashFile(e.target.files[0])
-    console.log('Hash:', hash);
-  }
-
-  async function getContract(withSigner=false) {
-    const provider = new ethers.BrowserProvider(window.ethereum);
-    if (withSigner) {
-      const signer = await provider.getSigner()
-      return new ethers.Contract(contractAddress, certificateArtifact.abi, signer);
-    }
-    return new ethers.Contract(contractAddress, certificateArtifact.abi, provider);
-  }
-
-  // Check if connected user has ISSUER_ROLE
-  async function checkIssuerRole() {
-    if (!window.ethereum) return;
-    try {
-      const provider = new ethers.BrowserProvider(window.ethereum);
-      const signer = await provider.getSigner();
-      const address = await signer.getAddress();
-      const contract = await getContract(false);
-      const ISSUER_ROLE = await contract.ISSUER_ROLE();
-      const hasRole = await contract.hasRole(ISSUER_ROLE, address);
-      setIsIssuer(hasRole);
-    } catch (e) {
-      console.error(e);
-      setIsIssuer(false);
-    }
-  }
-
-  // Only call checkIssuerRole after user interaction or after confirming account is available
-  useEffect(() => {
-    if (!window.ethereum) return;
-    let ignore = false;
-    async function handleAccountsChanged(accounts) {
-      if (ignore) return;
-      if (accounts && accounts.length > 0) {
-        setAccount(accounts[0]);
-        await checkIssuerRole();
-      } else {
-        setAccount("");
-        setIsIssuer(false);
-      }
-    }
-    window.ethereum.on && window.ethereum.on('accountsChanged', handleAccountsChanged);
-    // Optionally, check role after first user interaction (e.g., after connect)
-    window.ethereum.request({ method: 'eth_accounts' }).then(accounts => {
-      if (accounts && accounts.length > 0) {
-        setAccount(accounts[0]);
-        checkIssuerRole();
-      }
-    });
-    return () => {
-      ignore = true;
-      window.ethereum.removeListener && window.ethereum.removeListener('accountsChanged', handleAccountsChanged);
-    };
-  }, []);
-
-  async function onFileUpload() {
-    if (!selectedFile) {
-      setUserMessage("Please select a file first.")
-      return;
-    }
-    if (!window.ethereum) {
-      setUserMessage("MetaMask is not detected.")
-      return;
-    }
-
-    if(form.name === "" || form.degree === "") {
-      setUserMessage("Please enter both Name and Degree before uploading.")
-      return;
-    }
-
-    try {
-      setTxStatus("Requesting wallet...");
-      console.log("Uploading:", selectedFile);
-      await window.ethereum.request({ method: "eth_requestAccounts" });
-      
-      const contract = await getContract(true)
-
-      const hash = `0x${await hashFile(selectedFile)}`;
-      setFileHash(hash)
-      setTxStatus("Sending transaction...");
-      const transaction = await contract.storeCertificate(hash, form.name, form.degree)
-      console.log("Transaction sent: ", transaction.hash);
-      setTxStatus("Waiting for confirmation...");
-      const receipt = await transaction.wait()
-      console.log("Transaction confirmed:", {
-        status: receipt.status,
-        blockNumber: receipt.blockNumber,
-      });
-
-      const isStored = await contract.verifyHash(hash)
-      setVerifyResult(isStored)
-      setTxStatus(isStored ? "Hash stored and verified." : "Stored tx mined, but verify failed.");
-    } catch(error) {
-      setTxStatus("Upload failed.");
-      console.error('Error:', error);
-
-      const raw =
-      error?.shortMessage ||
-      error?.reason ||
-      error?.info?.error?.message ||
-      error?.message ||
-      "";
-
-      let userMessage = "Transaction failed. Please try again.";
-
-      if (raw.includes("Certificate already stored")) {
-        userMessage = "This certificate hash is already registered.";
-      } else if (raw.includes("user rejected") || raw.includes("User denied")) {
-        userMessage = "Transaction was cancelled in MetaMask.";
-      } else if (raw.includes("insufficient funds")) {
-        userMessage = "Insufficient ETH for gas fee.";
-      } else if (raw.includes("network")) {
-        userMessage = "Wrong network. Please switch MetaMask to Sepolia.";
-      }
-
-      setUserMessage(userMessage);
-    } 
-  }
-
-  async function onVerify() {
-    if (!selectedFile) {
-      setUserMessage("Please select a file first.")
-      return;
-    }
-    try {
-      setTxStatus("Checking verification...");
-      const contract = await getContract(false)
-      const hash = `0x${await hashFile(selectedFile)}`;
-      const isStored = await contract.verifyHash(hash)
-      setVerifyResult(isStored);
-      setTxStatus("Verification checked.");
-
-    } catch(error) {
-      setTxStatus("Upload failed.");
-      console.error('Error:', error);
-
-      const raw =
-      error?.shortMessage ||
-      error?.reason ||
-      error?.info?.error?.message ||
-      error?.message ||
-      "";
-
-      let userMessage = "Transaction failed. Please try again.";
-
-      if (raw.includes("Certificate already stored")) {
-        userMessage = "This certificate hash is already registered.";
-      } else if (raw.includes("user rejected") || raw.includes("User denied")) {
-        userMessage = "Transaction was cancelled in MetaMask.";
-      } else if (raw.includes("insufficient funds")) {
-        userMessage = "Insufficient ETH for gas fee.";
-      } else if (raw.includes("network")) {
-        userMessage = "Wrong network. Please switch MetaMask to Sepolia.";
-      }
-
-      setUserMessage(userMessage);
-    }
-    
-  }
-
-  // Fetch certificate details for the selected file's hash
-  async function onViewDetails() {
-    try {
-      setTxStatus("Fetching certificate details...");
-      const hash = `0x${await hashFile(selectedFile)}`;
-      const contract = await getContract(false)
-      const certificate = await contract.certificates(hash)
-      // If not found, cert.hash will be 0x...0
-      if (certificate.hash === "0x0000000000000000000000000000000000000000000000000000000000000000") {
-        setCertificateDetails(null);
-        setTxStatus("No certificate found for this file.");
-      } else {
-        setCertificateDetails({
-          hash: certificate.hash,
-          timestamp: certificate.timestamp,
-          studentName: certificate.studentName,
-          degree: certificate.degree
-        });
-        setTxStatus("Certificate details loaded.");
-      }
-    } catch (error) {
-      setCertificateDetails(null);
-      setTxStatus("Failed to fetch details.");
-      setUserMessage("Error fetching certificate details.");
-      console.error(error);
-
-    }
-  }
-
-  async function getAllCertificates() {
-    try {
-      setTxStatus("Fetching all certificates...");
-      setUserMessage("");
-      const contract = await getContract(false);
-      let certificatehashes = [];
-      const count = await contract.getCertificateHashesLength(); 
-      if (count <= 0) {
-        setUserMessage("No certificates registered");
-        seAllCertificates([]);
-        return;
-      }
-      for (let i = 0; i < count; i++) {
-        const hash = await contract.certificateHashes(i);
-        certificatehashes.push(hash);
-      }
-      seAllCertificates(certificatehashes);
-      setTxStatus("Fetched all certificates.");
-    } catch (error) {
-      setUserMessage("Could not fetch");
-      setTxStatus("Fetched all certificates.");
-      console.log(error);
-    }
-  }
-
-
-  async function connectWallet() {
-    if (!window.ethereum) {
-      setUserMessage("MetaMask not detected");
-      return;
-    }
-    try {
-      const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
-      if (accounts && accounts.length > 0) {
-        setAccount(accounts[0]);
-        await checkIssuerRole();
-      }
-    } catch (err) {
-      console.error(err);
-      setUserMessage("Failed to connect wallet.");
-    }
-  }
-
-  return (
-    <>
-      <div>
-        <h1>Blockchain Academic Certificate</h1>
-        
-        {/* Wallet Connection Status */}
-        <div style={{ marginBottom: '20px', padding: '10px', border: '1px solid #ccc', borderRadius: '8px' }}>
-          {account ? (
-            <p style={{ margin: 0 }}>
-              <b>Connected:</b> {account.substring(0,6)}...{account.substring(38)} 
-              <span style={{ marginLeft: '10px', color: isIssuer ? 'green' : 'gray' }}>
-                ({isIssuer ? "Issuer Role" : "Employer/Verifer Role"})
-              </span>
-            </p>
-          ) : (
-            <button onClick={connectWallet} style={{ backgroundColor: '#ff9800', color: '#fff', border: 'none', padding: '10px 15px', borderRadius: '5px', cursor: 'pointer' }}>
-              Connect MetaMask
-            </button>
-          )}
-        </div>
-
-        <h3>File Upload</h3>
-        {userMessage && <div className="user-message">{userMessage}</div>}
-        {isIssuer ? (
-          <>
-            <div>
-              <input type="file" onChange={onFileChange} style={{ marginBottom: "15px" }} />
-              
-              <div style={{ display: "flex", flexDirection: "column", gap: "10px", margin: "15px 0", maxWidth: "300px", marginInline: "auto" }}>
-                <label style={{ display: "flex", flexDirection: "column", textAlign: "left" }}>
-                  Student Name:
-                  <input
-                    type="text"
-                    value={form.name}
-                    onChange={e => setForm({...form, name: e.target.value})}
-                    required
-                    style={{ padding: "8px", marginTop: "5px" }}
-                    placeholder="Enter student's name"
-                  />
-                </label>
-                <label style={{ display: "flex", flexDirection: "column", textAlign: "left" }}>
-                  Degree Title:
-                  <input
-                    type="text"
-                    value={form.degree}
-                    onChange={e => setForm({...form, degree: e.target.value})}
-                    required
-                    style={{ padding: "8px", marginTop: "5px" }}
-                    placeholder="e.g. B.S. Computer Science"
-                  />
-                </label>
-              </div>
-
-              <div>
-                <button onClick={onFileUpload}>Upload!</button>
-                <button onClick={onVerify} disabled={!selectedFile}>Verify</button>
-                <button onClick={onViewDetails} disabled={!selectedFile}>View Details</button>
-              </div>
-            </div>
-            {selectedFile && (
-              <div style={{ marginTop: "20px", color: "#aaa" }}>
-                <p>Selected File: {selectedFile.name} ({selectedFile.size} bytes)</p>
-              </div>
-            )}
-          </>
-        ) : (
-          <>
-            <div>
-              <input type="file" onChange={onFileChange} />
-              <button onClick={onVerify} disabled={!selectedFile}>Verify</button>
-              <button onClick={onViewDetails} disabled={!selectedFile}>View Details</button>
-            </div>
-            {selectedFile && (
-              <div>
-                <p>Name: {selectedFile.name}</p>
-                <p>Type: {selectedFile.type || "Unknown"}</p>
-                <p>Size: {selectedFile.size} bytes</p>
-              </div>
-            )}
-            <div style={{color: 'gray', marginTop: 8}}>
-              Only authorized issuers can upload certificates.
-            </div>
-          </>
-        )}
-        {fileHash && <p>Computed Hash: {fileHash}</p>}
-        {txStatus && <p>Status: {txStatus}</p>}
-        {txStatus === "Waiting for confirmation..." && <Spinner />}
-        {verifyResult !== null &&  (
-          <p>Verification: {verifyResult ? "Valid (stored)" : "Not found"}</p>
-        )}
-        {certificateDetails && (
-          <div style={{border: '1px solid #ccc', padding: '10px', marginTop: '10px'}}>
-            <h4>Certificate Details</h4>
-            <p><b>Hash:</b> {certificateDetails.hash}</p>
-            <p><b>Name:</b> {certificateDetails.studentName}</p>
-            <p><b>Degree:</b> {certificateDetails.degree}</p>
-            <p><b>Timestamp:</b> {new Date(Number(certificateDetails.timestamp) * 1000).toLocaleString()}</p>
-          </div>
-        )}
-        <button onClick={getAllCertificates}>Show All Certificates</button>
-        {allCertificates && allCertificates.length > 0 && (
-          <div>
-            <h4>All Certificate Hashes</h4>
-            <ul>
-              {allCertificates.map((hash, idx) => (
-                <li key={idx}>{hash}</li>
-              ))}
-            </ul>
-          </div>
-        )}
-
-      </div>
-    </>
-  )
-}
-
-export default App
+const styles = {
+  container: { maxWidth: '1000px', margin: '40px auto', padding: '20px', fontFamily: 'system-ui, sans-serif', color: '#333' },
+  header: { textAlign: 'center', marginBottom: '30px' },
+  title: { fontSize: '28px', color: '#1a56db', marginBottom: '5px' },
+  subtitle: { fontSize: '14px', color: '#6b7280' },
+  walletSection: { display: 'flex', justifyContent: 'center', marginBottom: '20px' },
+  connectBtn: { backgroundColor: '#1a56db', color: '#fff', padding: '10px 20px', borderRadius: '8px', border: 'none', cursor: 'pointer', fontWeight: 'bold' },
+  accountText: { fontSize: '14px', fontWeight: 'bold', color: '#111827', display: 'flex', alignItems: 'center', gap: '8px' },
+  dotConnected: { width: '10px', height: '10px', backgroundColor: '#10b981', borderRadius: '50%' },
+  mainGrid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '20px' },
+  card: { backgroundColor: '#fff', padding: '20px', borderRadius: '12px', boxShadow: '0 4px 6px rgba(0,0,0,0.05)', border: '1px solid #e5e7eb' },
+  cardTitle: { fontSize: '18px', marginBottom: '15px', color: '#111827' },
+  fileDropArea: { border: '2px dashed #d1d5db', padding: '20px', borderRadius: '8px', textAlign: 'center', cursor: 'pointer', backgroundColor: '#f9fafb' },
+  fileInput: { display: 'none' },
+  fileLabel: { color: '#4b5563', fontSize: '14px', cursor: 'pointer' },
+  hashText: { fontSize: '12px', color: '#6b7280', marginTop: '10px', wordBreak: 'break-all' },
+  formGroup: { marginTop: '20px', display: 'flex', flexDirection: 'column', gap: '10px' },
+  sectionTitle: { fontSize: '14px', color: '#374151', marginBottom: '5px' },
+  input: { padding: '10px', borderRadius: '6px', border: '1px solid #d1d5db', fontSize: '14px' },
+  actionBtnPrimary: { backgroundColor: '#10b981', color: '#fff', padding: '12px', borderRadius: '6px', border: 'none', cursor: 'pointer', fontWeight: 'bold' },
+  actionBtnSecondary: { backgroundColor: '#4b5563', color: '#fff', padding: '12px', borderRadius: '6px', border: 'none', cursor: 'pointer', fontWeight: 'bold', width: '100%' },
+  statusBox: { padding: '12px', borderRadius: '6px', fontSize: '14px', marginBottom: '15px', textAlign: 'center' },
+  detailsBox: { backgroundColor: '#f8fafc', padding: '15px', borderRadius: '8px', border: '1px solid #e2e8f0' },
+  detailsTitle: { fontSize: '16px', color: '#0f172a', marginBottom: '10px' },
+  detailsRow: { display: 'flex', justifyContent: 'space-between', padding: '8px 0', borderBottom: '1px solid #e2e8f0' },
+  detailsLabel: { fontSize: '13px', color: '#64748b' },
+  detailsValue: { fontSize: '13px', color: '#0f172a', fontWeight: '500' },
+  emptyText: { color: '#94a3b8', fontSize: '14px', textAlign: 'center', padding: '40px 0' }
+};
